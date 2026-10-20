@@ -1,8 +1,8 @@
 {
   "name": "scentdream",
   "private": true,
-  "version": "1.0.0",
-  "main": "main.cjs", 
+  "version": "1.0.1",
+  "main": "main.cjs",
   "type": "module",
   "repository": {
     "type": "git",
@@ -12,16 +12,18 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "empaquetar": "vite build && electron-builder --publish always" 
+    "empaquetar": "vite build && electron-builder --publish always"
   },
   "build": {
     "appId": "com.scentdream.app",
     "productName": "ScentDream",
-    "publish": [{
-      "provider": "github",
-      "owner": "Kingssx72",
-      "repo": "ScentDream"
-    }],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Kingssx72",
+        "repo": "ScentDream"
+      }
+    ],
     "files": [
       "dist/**/*",
       "main.cjs",
@@ -42,6 +44,7 @@
     "@types/react": "^18.3.10",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.2",
+    "autoprefixer": "^10.6.1",
     "electron": "^33.0.0",
     "electron-builder": "^25.1.8",
     "eslint": "^9.11.1",

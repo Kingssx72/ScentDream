@@ -1,32 +1,26 @@
 import { useState, useEffect } from 'react'
 
 function App() {
-  const [pestanaActiva, setPestanaActiva] = useState('Perfumería') 
+  const [pestanaActiva, setPestanaActiva] = useState('Inventario') 
 
-  // === 1. MEMORIAS PERMANENTES (Se guardan en el disco duro) ===
-  
-  // Ingredientes
+  // === 1. MEMORIAS PERMANENTES ===
   const [ingredientes, setIngredientes] = useState(() => {
     const guardado = localStorage.getItem('mi_perfumeria_ingredientes')
     return guardado ? JSON.parse(guardado) : [
-      { id: 1, nombre: 'Bergamota', nota: 'salida', color: 'bg-green-900/30 border-green-700 text-green-300' },
-      { id: 2, nombre: 'Limón', nota: 'salida', color: 'bg-green-900/30 border-green-700 text-green-300' },
-      { id: 3, nombre: 'Jazmín', nota: 'corazón', color: 'bg-pink-900/30 border-pink-700 text-pink-300' },
-      { id: 4, nombre: 'Rosa', nota: 'corazón', color: 'bg-pink-900/30 border-pink-700 text-pink-300' },
-      { id: 5, nombre: 'Vainilla', nota: 'fondo', color: 'bg-amber-900/30 border-amber-700 text-amber-300' },
-      { id: 6, nombre: 'Sándalo', nota: 'fondo', color: 'bg-amber-900/30 border-amber-700 text-amber-300' },
+      { id: 1, nombre: 'Bergamota', nota: 'salida', color: 'bg-green-900/30 border-green-700 text-green-300', stock: 30, unidadStock: 'ml', proveedor: 'AromaZone' },
+      { id: 2, nombre: 'Limón', nota: 'salida', color: 'bg-green-900/30 border-green-700 text-green-300', stock: 15, unidadStock: 'ml', proveedor: 'Givaudan' },
+      { id: 3, nombre: 'Jazmín', nota: 'corazón', color: 'bg-pink-900/30 border-pink-700 text-pink-300', stock: 10, unidadStock: 'ml', proveedor: 'Local' },
+      { id: 5, nombre: 'Vainilla', nota: 'fondo', color: 'bg-amber-900/30 border-amber-700 text-amber-300', stock: 50, unidadStock: 'g', proveedor: 'Perfumers Apprentice' },
     ]
   })
   useEffect(() => { localStorage.setItem('mi_perfumeria_ingredientes', JSON.stringify(ingredientes)) }, [ingredientes])
 
-  // Maceraciones
   const [maceraciones, setMaceraciones] = useState(() => {
     const guardado = localStorage.getItem('mi_perfumeria_maceraciones')
     return guardado ? JSON.parse(guardado) : []
   })
   useEffect(() => { localStorage.setItem('mi_perfumeria_maceraciones', JSON.stringify(maceraciones)) }, [maceraciones])
 
-  // Tickets
   const [tickets, setTickets] = useState(() => {
     const guardado = localStorage.getItem('mi_perfumeria_tickets')
     return guardado ? JSON.parse(guardado) : [
@@ -35,7 +29,6 @@ function App() {
   })
   useEffect(() => { localStorage.setItem('mi_perfumeria_tickets', JSON.stringify(tickets)) }, [tickets])
 
-  // Archivos (Biblioteca)
   const [archivos, setArchivos] = useState(() => {
     const guardado = localStorage.getItem('mi_perfumeria_archivos')
     return guardado ? JSON.parse(guardado) : [
@@ -44,7 +37,6 @@ function App() {
   })
   useEffect(() => { localStorage.setItem('mi_perfumeria_archivos', JSON.stringify(archivos)) }, [archivos])
 
-  // Fórmula actual en el frasco
   const [formula, setFormula] = useState(() => {
     const guardado = localStorage.getItem('mi_perfumeria_formula')
     return guardado ? JSON.parse(guardado) : []
@@ -52,15 +44,42 @@ function App() {
   useEffect(() => { localStorage.setItem('mi_perfumeria_formula', JSON.stringify(formula)) }, [formula])
 
 
-  // === 2. LÓGICA DEL LABORATORIO ===
+  // === 2. LÓGICA DEL INVENTARIO ===
+  const [nuevoIngrediente, setNuevoIngrediente] = useState({ nombre: '', nota: 'salida', stock: '', unidadStock: 'ml', proveedor: '' })
+
+  const colorPorNota = {
+    'salida': 'bg-green-900/30 border-green-700 text-green-300',
+    'corazón': 'bg-pink-900/30 border-pink-700 text-pink-300',
+    'fondo': 'bg-amber-900/30 border-amber-700 text-amber-300'
+  }
+
+  const crearIngrediente = (e) => {
+    e.preventDefault()
+    if (!nuevoIngrediente.nombre) return
+    const ingredienteFinal = {
+      id: Date.now(),
+      ...nuevoIngrediente,
+      color: colorPorNota[nuevoIngrediente.nota],
+      stock: parseFloat(nuevoIngrediente.stock) || 0
+    }
+    setIngredientes([ingredienteFinal, ...ingredientes])
+    setNuevoIngrediente({ nombre: '', nota: 'salida', stock: '', unidadStock: 'ml', proveedor: '' })
+  }
+
+  const eliminarIngredienteBase = (id) => {
+    if(window.confirm('¿Seguro que quieres eliminar este ingrediente de tu inventario?')) {
+      setIngredientes(ingredientes.filter(i => i.id !== id))
+    }
+  }
+
+
+  // === 3. LÓGICA DEL LABORATORIO ===
   const [modalIngrediente, setModalIngrediente] = useState(null) 
   const [cantidadTemporal, setCantidadTemporal] = useState('')
   const [unidadTemporal, setUnidadTemporal] = useState('%') 
-
   const [modalGuardar, setModalGuardar] = useState(false)
   const [nombrePerfume, setNombrePerfume] = useState('')
   const [diasMaceracion, setDiasMaceracion] = useState(30)
-  const [textoNuevoTicket, setTextoNuevoTicket] = useState('')
 
   const iniciarArrastre = (e, ingrediente) => e.dataTransfer.setData('ingrediente_id', ingrediente.id)
   const permitirSoltar = (e) => e.preventDefault()
@@ -102,7 +121,6 @@ function App() {
   const guardarFormulaFinal = (e) => {
     e.preventDefault()
     if (!nombrePerfume.trim()) return
-
     const nuevoPerfume = { id: Date.now(), nombre: nombrePerfume, fechaInicio: new Date().toLocaleDateString('es-ES'), diasTotales: parseInt(diasMaceracion), diasTranscurridos: 0 }
     setMaceraciones([nuevoPerfume, ...maceraciones])
     setFormula([]) 
@@ -117,7 +135,8 @@ function App() {
   const totalGramos = formula.filter(i => i.unidad === 'g').reduce((acc, i) => acc + i.cantidad, 0);
   const totalMg = formula.filter(i => i.unidad === 'mg').reduce((acc, i) => acc + i.cantidad, 0);
 
-  // === 3. LÓGICA DE TICKETS Y BIBLIOTECA ===
+  // === 4. LÓGICA DE TICKETS Y BIBLIOTECA ===
+  const [textoNuevoTicket, setTextoNuevoTicket] = useState('')
   const crearTicket = (e) => { 
     e.preventDefault(); 
     if (textoNuevoTicket.trim() === '') return; 
@@ -138,45 +157,128 @@ function App() {
     <div className="min-h-screen bg-slate-950 p-8 font-sans relative text-slate-200 overflow-hidden">
       
       {/* FONDO ANIMADO */}
-      <style>
-        {`
-          @keyframes blob {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(60px, -60px) scale(1.1); }
-            66% { transform: translate(-40px, 40px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
-          }
-          .animate-blob { animation: blob 12s infinite alternate ease-in-out; }
-          .animation-delay-2000 { animation-delay: 3s; }
-          .animation-delay-4000 { animation-delay: 6s; }
-        `}
-      </style>
-
+      <style>{`@keyframes blob { 0% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(60px, -60px) scale(1.1); } 66% { transform: translate(-40px, 40px) scale(0.9); } 100% { transform: translate(0px, 0px) scale(1); } } .animate-blob { animation: blob 12s infinite alternate ease-in-out; } .animation-delay-2000 { animation-delay: 3s; } .animation-delay-4000 { animation-delay: 6s; }`}</style>
       <div className="absolute top-10 left-10 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[100px] animate-blob z-0 pointer-events-none"></div>
       <div className="absolute top-40 right-20 w-[400px] h-[400px] bg-blue-600/20 rounded-full blur-[100px] animate-blob animation-delay-2000 z-0 pointer-events-none"></div>
       <div className="absolute -bottom-20 left-1/2 w-[600px] h-[600px] bg-emerald-600/10 rounded-full blur-[120px] animate-blob animation-delay-4000 z-0 pointer-events-none"></div>
 
       {/* MENÚ SUPERIOR */}
       <nav className="flex gap-2 mb-8 relative z-10 bg-slate-900/60 backdrop-blur-xl p-2 rounded-2xl shadow-xl w-max mx-auto border border-slate-700/50">
-        {['Menu', 'Perfumería', 'Tickets', 'Biblioteca'].map((pestana) => (
+        {['Menu', 'Inventario', 'Perfumería', 'Tickets', 'Biblioteca'].map((pestana) => (
           <button 
             key={pestana}
             onClick={() => setPestanaActiva(pestana)}
-            className={`px-8 py-2.5 rounded-xl transition-all font-medium text-sm tracking-wide ${
-              pestanaActiva === pestana 
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg' 
-                : 'bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white'
-            }`}
+            className={`px-8 py-2.5 rounded-xl transition-all font-medium text-sm tracking-wide ${pestanaActiva === pestana ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg' : 'bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white'}`}
           >
             {pestana}
           </button>
         ))}
       </nav>
 
-      {/* CONTENEDOR PRINCIPAL */}
       <main className="bg-slate-800/80 backdrop-blur-2xl rounded-[2.5rem] p-8 h-[780px] flex gap-8 relative z-10 shadow-2xl border border-slate-600/50">
         
-        {/* === VISTA 1: PERFUMERÍA === */}
+        {/* === VISTA 1: MENU (PANEL DE CONTROL) === */}
+        {pestanaActiva === 'Menu' && (
+          <div className="w-full h-full flex flex-col gap-8 overflow-y-auto pr-4">
+            <div><h2 className="text-3xl font-black text-white">Resumen</h2><p className="text-slate-400 mt-1">Panel de control de tu laboratorio.</p></div>
+            <div className="bg-slate-900/50 rounded-3xl p-8 border border-slate-700 shadow-xl">
+              <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-6"><span className="bg-amber-900/50 text-amber-400 p-2 rounded-xl text-lg border border-amber-700/50">⏳</span> En Maceración</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {maceraciones.map(mac => {
+                  const porcentaje = (mac.diasTranscurridos / mac.diasTotales) * 100;
+                  const diasRestantes = mac.diasTotales - mac.diasTranscurridos;
+                  return (
+                    <div key={mac.id} className="border border-slate-700 rounded-2xl p-6 bg-slate-800/80 relative group hover:border-amber-500/50 transition-colors">
+                      <div className="flex justify-between items-start mb-6">
+                        <div><p className="font-bold text-lg text-white leading-tight">{mac.nombre}</p><p className="text-xs text-slate-400 font-medium mt-1">Desde el {mac.fechaInicio}</p></div>
+                        <div className="text-right bg-slate-900 px-3 py-2 rounded-xl border border-slate-700"><p className="font-black text-2xl text-amber-400 leading-none">{diasRestantes}</p><p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Días más</p></div>
+                      </div>
+                      <div className="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-700"><div className="bg-gradient-to-r from-amber-500 to-yellow-400 h-full rounded-full shadow-[0_0_10px_rgba(251,191,36,0.5)]" style={{ width: `${porcentaje}%` }}></div></div>
+                    </div>
+                  )
+                })}
+                {maceraciones.length === 0 && <p className="text-slate-500 text-sm">No tienes perfumes macerando.</p>}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="border border-slate-700 rounded-3xl p-6 bg-slate-900/50 shadow-sm flex items-center gap-4"><div className="w-14 h-14 bg-blue-900/50 text-blue-400 rounded-2xl flex items-center justify-center text-2xl border border-blue-700/50">📝</div><div><h3 className="font-bold text-slate-400 text-sm">Tickets</h3><p className="text-3xl font-black text-white">{tickets.length}</p></div></div>
+              <div className="border border-slate-700 rounded-3xl p-6 bg-slate-900/50 shadow-sm flex items-center gap-4"><div className="w-14 h-14 bg-purple-900/50 text-purple-400 rounded-2xl flex items-center justify-center text-2xl border border-purple-700/50">📚</div><div><h3 className="font-bold text-slate-400 text-sm">Archivos</h3><p className="text-3xl font-black text-white">{archivos.length}</p></div></div>
+              <div className="border border-slate-700 rounded-3xl p-6 bg-slate-900/50 shadow-sm flex items-center gap-4"><div className="w-14 h-14 bg-green-900/50 text-green-400 rounded-2xl flex items-center justify-center text-2xl border border-green-700/50">🧪</div><div><h3 className="font-bold text-slate-400 text-sm">Ingredientes</h3><p className="text-3xl font-black text-white">{ingredientes.length}</p></div></div>
+            </div>
+          </div>
+        )}
+
+        {/* === VISTA 2: INVENTARIO === */}
+        {pestanaActiva === 'Inventario' && (
+          <div className="w-full h-full flex gap-8">
+            <aside className="w-80 border border-slate-700 rounded-3xl p-6 flex flex-col shadow-inner bg-slate-900/40">
+              <h2 className="font-bold text-white mb-6 text-xl">Nuevo Ingrediente</h2>
+              <form onSubmit={crearIngrediente} className="flex flex-col gap-4 flex-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Nombre</label>
+                  <input type="text" required value={nuevoIngrediente.nombre} onChange={(e)=>setNuevoIngrediente({...nuevoIngrediente, nombre: e.target.value})} className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white outline-none focus:border-indigo-500" placeholder="Ej: Iso E Super"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Nota Olfativa</label>
+                  <select value={nuevoIngrediente.nota} onChange={(e)=>setNuevoIngrediente({...nuevoIngrediente, nota: e.target.value})} className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white outline-none focus:border-indigo-500">
+                    <option value="salida">🌿 Salida</option>
+                    <option value="corazón">🌸 Corazón</option>
+                    <option value="fondo">🪵 Fondo</option>
+                  </select>
+                </div>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Stock</label>
+                    <input type="number" step="0.01" value={nuevoIngrediente.stock} onChange={(e)=>setNuevoIngrediente({...nuevoIngrediente, stock: e.target.value})} className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white outline-none focus:border-indigo-500" placeholder="0"/>
+                  </div>
+                  <div className="w-24">
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Unidad</label>
+                    <select value={nuevoIngrediente.unidadStock} onChange={(e)=>setNuevoIngrediente({...nuevoIngrediente, unidadStock: e.target.value})} className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white outline-none focus:border-indigo-500">
+                      <option value="ml">ml</option><option value="g">g</option><option value="kg">kg</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Proveedor / Marca</label>
+                  <input type="text" value={nuevoIngrediente.proveedor} onChange={(e)=>setNuevoIngrediente({...nuevoIngrediente, proveedor: e.target.value})} className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white outline-none focus:border-indigo-500" placeholder="Ej: Givaudan"/>
+                </div>
+                <button type="submit" className="mt-auto py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:scale-[1.02] transition-transform shadow-lg">+ Añadir al Inventario</button>
+              </form>
+            </aside>
+
+            <section className="flex-1 border border-slate-700 rounded-3xl p-6 bg-slate-900/20 overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="font-black text-white text-2xl">Mi Órgano de Perfumista</h2>
+                  <p className="text-sm text-slate-400">Tienes {ingredientes.length} esencias registradas.</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                {ingredientes.map(ing => (
+                  <div key={ing.id} className={`p-4 rounded-2xl border flex flex-col relative group ${ing.color} bg-opacity-10 backdrop-blur-sm`}>
+                    <button onClick={()=>eliminarIngredienteBase(ing.id)} className="absolute top-3 right-3 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110">🗑️</button>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">{ing.nota === 'salida' ? '🌿' : ing.nota === 'corazón' ? '🌸' : '🪵'}</span>
+                      <h3 className="font-bold text-white truncate pr-6 text-lg">{ing.nombre}</h3>
+                    </div>
+                    <div className="mt-auto flex justify-between items-end border-t border-white/10 pt-3">
+                      <div>
+                        <p className="text-[10px] uppercase font-bold opacity-70">Stock</p>
+                        <p className="font-black text-lg">{ing.stock} <span className="text-xs font-normal opacity-70">{ing.unidadStock}</span></p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] uppercase font-bold opacity-70">Proveedor</p>
+                        <p className="text-sm font-medium truncate max-w-[100px]">{ing.proveedor || '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* === VISTA 3: PERFUMERÍA === */}
         {pestanaActiva === 'Perfumería' && (
            <div className="w-full h-full flex gap-8">
             <aside className="w-72 border border-slate-700 rounded-3xl p-6 flex flex-col shadow-inner bg-slate-900/40 overflow-y-auto">
@@ -188,7 +290,7 @@ function App() {
                     <span className="text-lg bg-slate-900/50 w-8 h-8 rounded-full flex items-center justify-center shadow-sm">
                       {ingrediente.nota === 'salida' ? '🌿' : ingrediente.nota === 'corazón' ? '🌸' : '🪵'}
                     </span>
-                    {ingrediente.nombre}
+                    <span className="truncate">{ingrediente.nombre}</span>
                   </div>
                 ))}
               </div>
@@ -239,9 +341,7 @@ function App() {
 
             <aside className="w-72 border border-slate-700 rounded-3xl p-6 flex flex-col shadow-inner bg-slate-900/40">
               <h2 className="font-bold text-white mb-2 text-lg">Análisis de Mezcla</h2>
-              <p className="text-[10px] text-slate-500 mb-6 uppercase tracking-widest font-bold">Tiempo Real</p>
-              
-              <div className="flex-1 flex flex-col gap-6">
+              <div className="flex-1 flex flex-col gap-6 mt-4">
                 <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-600/50 shadow-sm">
                   <div className="flex justify-between items-end mb-2">
                     <span className="text-xs font-bold text-slate-400 uppercase">Concentración</span>
@@ -251,7 +351,6 @@ function App() {
                     <div className={`h-full rounded-full transition-all duration-500 ${totalPorcentaje > 100 ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-gradient-to-r from-indigo-500 to-purple-500'}`} style={{ width: `${Math.min(totalPorcentaje, 100)}%` }}></div>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-600/50 shadow-sm flex flex-col items-center"><span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Volumen</span><span className="text-xl font-black text-white">{totalMl} <span className="text-xs text-slate-400">ml</span></span></div>
                   <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-600/50 shadow-sm flex flex-col items-center"><span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Gotas</span><span className="text-xl font-black text-white">{totalGotas}</span></div>
@@ -259,7 +358,6 @@ function App() {
                   <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-600/50 shadow-sm flex flex-col items-center"><span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Peso (mg)</span><span className="text-xl font-black text-white">{totalMg} <span className="text-xs text-slate-400">mg</span></span></div>
                 </div>
               </div>
-
               <div className="mt-6">
                 <button onClick={() => setModalGuardar(true)} disabled={formula.length === 0} className={`w-full py-4 font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 ${formula.length > 0 && totalPorcentaje <= 100 ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:scale-[1.02]' : formula.length > 0 && totalPorcentaje > 100 ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed'}`}>
                   <span className="text-xl">💾</span> Guardar Fórmula
@@ -269,38 +367,7 @@ function App() {
           </div>
         )}
 
-        {/* === VISTA 2: MENU (PANEL DE CONTROL) === */}
-        {pestanaActiva === 'Menu' && (
-          <div className="w-full h-full flex flex-col gap-8 overflow-y-auto pr-4">
-            <div><h2 className="text-3xl font-black text-white">Resumen</h2><p className="text-slate-400 mt-1">Panel de control de tu laboratorio.</p></div>
-            <div className="bg-slate-900/50 rounded-3xl p-8 border border-slate-700 shadow-xl">
-              <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-6"><span className="bg-amber-900/50 text-amber-400 p-2 rounded-xl text-lg border border-amber-700/50">⏳</span> En Maceración</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {maceraciones.map(mac => {
-                  const porcentaje = (mac.diasTranscurridos / mac.diasTotales) * 100;
-                  const diasRestantes = mac.diasTotales - mac.diasTranscurridos;
-                  return (
-                    <div key={mac.id} className="border border-slate-700 rounded-2xl p-6 bg-slate-800/80 relative group hover:border-amber-500/50 transition-colors">
-                      <div className="flex justify-between items-start mb-6">
-                        <div><p className="font-bold text-lg text-white leading-tight">{mac.nombre}</p><p className="text-xs text-slate-400 font-medium mt-1">Desde el {mac.fechaInicio}</p></div>
-                        <div className="text-right bg-slate-900 px-3 py-2 rounded-xl border border-slate-700"><p className="font-black text-2xl text-amber-400 leading-none">{diasRestantes}</p><p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Días más</p></div>
-                      </div>
-                      <div className="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-700"><div className="bg-gradient-to-r from-amber-500 to-yellow-400 h-full rounded-full shadow-[0_0_10px_rgba(251,191,36,0.5)]" style={{ width: `${porcentaje}%` }}></div></div>
-                    </div>
-                  )
-                })}
-                {maceraciones.length === 0 && <p className="text-slate-500 text-sm">No tienes perfumes macerando.</p>}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="border border-slate-700 rounded-3xl p-6 bg-slate-900/50 shadow-sm flex items-center gap-4"><div className="w-14 h-14 bg-blue-900/50 text-blue-400 rounded-2xl flex items-center justify-center text-2xl border border-blue-700/50">📝</div><div><h3 className="font-bold text-slate-400 text-sm">Tickets</h3><p className="text-3xl font-black text-white">{tickets.length}</p></div></div>
-              <div className="border border-slate-700 rounded-3xl p-6 bg-slate-900/50 shadow-sm flex items-center gap-4"><div className="w-14 h-14 bg-purple-900/50 text-purple-400 rounded-2xl flex items-center justify-center text-2xl border border-purple-700/50">📚</div><div><h3 className="font-bold text-slate-400 text-sm">Archivos</h3><p className="text-3xl font-black text-white">{archivos.length}</p></div></div>
-              <div className="border border-slate-700 rounded-3xl p-6 bg-slate-900/50 shadow-sm flex items-center gap-4"><div className="w-14 h-14 bg-green-900/50 text-green-400 rounded-2xl flex items-center justify-center text-2xl border border-green-700/50">🧪</div><div><h3 className="font-bold text-slate-400 text-sm">Ingredientes</h3><p className="text-3xl font-black text-white">{ingredientes.length}</p></div></div>
-            </div>
-          </div>
-        )}
-
-        {/* === VISTA 3: TICKETS === */}
+        {/* === VISTA 4: TICKETS === */}
         {pestanaActiva === 'Tickets' && (
           <div className="w-full h-full flex flex-col gap-6">
             <form onSubmit={crearTicket} className="flex gap-4">
@@ -330,7 +397,7 @@ function App() {
           </div>
         )}
 
-        {/* === VISTA 4: BIBLIOTECA === */}
+        {/* === VISTA 5: BIBLIOTECA === */}
         {pestanaActiva === 'Biblioteca' && (
           <div className="w-full h-full flex flex-col gap-6 overflow-hidden">
             <div className="flex justify-between items-center border-b border-slate-700 pb-4">
@@ -359,7 +426,7 @@ function App() {
         )}
       </main>
 
-      {/* === MODALES (Añadir/Editar y Guardar) === */}
+      {/* === MODALES === */}
       {modalIngrediente && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
           <div className="bg-slate-800 rounded-[2rem] p-6 sm:p-8 w-full max-w-md shadow-2xl border border-slate-600 animate-bounce-in flex flex-col">
@@ -367,7 +434,7 @@ function App() {
             <form onSubmit={confirmarCantidad} className="flex flex-col gap-4 mt-6 w-full">
               <div className="flex items-center gap-3 w-full">
                 <input type="number" autoFocus value={cantidadTemporal} onChange={(e) => setCantidadTemporal(e.target.value)} className="flex-1 min-w-0 px-4 py-4 bg-slate-900 border border-slate-700 rounded-2xl outline-none focus:border-indigo-500 text-2xl text-center font-black text-white placeholder-slate-600" placeholder="0" min="0.01" step="0.01"/>
-                <select value={unidadTemporal} onChange={(e) => setUnidadTemporal(e.target.value)} className="w-[100px] sm:w-32 px-3 sm:px-4 py-4 rounded-2xl bg-slate-900 border border-slate-700 outline-none focus:border-indigo-500 text-lg sm:text-xl font-bold cursor-pointer text-slate-300">
+                <select value={unidadTemporal} onChange={(e) => setUnidadTemporal(e.target.value)} className="w-32 px-4 py-4 rounded-2xl bg-slate-900 border border-slate-700 outline-none focus:border-indigo-500 text-xl font-bold cursor-pointer text-slate-300">
                   <option value="%">%</option><option value="ml">ml</option><option value="mg">mg</option><option value="g">g</option><option value="gotas">gotas</option>
                 </select>
               </div>
@@ -405,9 +472,7 @@ function App() {
           </div>
         </div>
       )}
-
     </div>
   )
 }
-
 export default App
